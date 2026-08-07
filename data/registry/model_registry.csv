@@ -1,0 +1,3 @@
+version,model_name,algorithm,mae,rmse,r2,train_date,status,model_file
+1,AQI Predictor,Random Forest,5.55,8.5,0.943,2026-08-03 16:51,Archived,random_forest_v1.pkl
+2,AQI Predictor,Random Forest,5.55,8.5,0.943,2026-08-03 16:51,Production,random_forest_v2.pkl
