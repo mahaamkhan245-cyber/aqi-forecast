@@ -1,12 +1,24 @@
-streamlit==1.35.0
-pandas==2.2.2
-scikit-learn==1.5.0
-joblib==1.4.2
-plotly==5.22.0
-requests==2.32.3
-python-dotenv==1.0.1
-shap==0.45.1
-matplotlib==3.9.0
-numpy==1.26.4
-tensorflow==2.16.1
-flask==3.0.3
+# ── Core data & ML (Python 3.14 compatible wheels) ──────────────
+numpy>=2.1.0
+pandas>=2.2.3
+scikit-learn>=1.6.0
+joblib>=1.4.2
+
+# ── Deep learning (tf has no cp314 wheel yet — use torch instead) 
+# tensorflow is NOT installable on Python 3.14 as of Aug 2026
+# Use the lightweight keras-compatible alternative below:
+# torch>=2.3.0          # uncomment if you want PyTorch LSTM
+# or skip and rely on RF + Ridge models only
+
+# ── Dashboard & API ──────────────────────────────────────────────
+streamlit>=1.35.0
+flask>=3.0.3
+plotly>=5.22.0
+
+# ── API & data fetch ─────────────────────────────────────────────
+requests>=2.32.3
+python-dotenv>=1.0.1
+
+# ── Explainability ───────────────────────────────────────────────
+shap>=0.46.0
+matplotlib>=3.9.0

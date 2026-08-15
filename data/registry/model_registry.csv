@@ -1,3 +1,4 @@
-version,model_name,algorithm,mae,rmse,r2,train_date,status,model_file
-1,AQI Predictor,Random Forest,5.55,8.5,0.943,2026-08-03 16:51,Archived,random_forest_v1.pkl
-2,AQI Predictor,Random Forest,5.55,8.5,0.943,2026-08-03 16:51,Production,random_forest_v2.pkl
+version,algorithm,model_file,r2,mae,rmse,train_date,status
+1,Random Forest,rf_model.pkl,0.8968,5.3052,7.0942,2026-08-11 00:52,Challenger
+2,Ridge Regression,ridge_model.pkl,0.9616,3.2997,4.3247,2026-08-11 00:52,Challenger
+3,PyTorch LSTM,pytorch_lstm.pt,0.9738,2.9351,3.5739,2026-08-11 00:52,Production
