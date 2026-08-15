@@ -32,6 +32,11 @@ jobs:
             pip install pandas requests scikit-learn joblib python-dotenv hopsworks
           fi
 
+      - name: Verify hopsworks install
+        run: |
+          pip install hopsworks==5.0.4
+          python -c "import hopsworks; print('hopsworks OK:', hopsworks.__version__)"
+
       - name: Run Hopsworks Feature Pipeline
         run: python hopsworks_feature_pipeline.py
         env:
