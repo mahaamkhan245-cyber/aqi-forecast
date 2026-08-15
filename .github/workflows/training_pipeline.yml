@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: pearl
+        working-directory: pearl_intern
 
     steps:
       - name: Checkout repository
