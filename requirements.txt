@@ -22,5 +22,5 @@ python-dotenv>=1.0.1
 # ── Explainability ───────────────────────────────────────────────
 shap>=0.46.0
 matplotlib>=3.9.0
-hopsworks
+hopsworks==5.0.4
 torch>=2.3.0
