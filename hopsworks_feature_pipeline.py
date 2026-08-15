@@ -359,12 +359,9 @@ try:
     )
     print(f"         AQI: {aqi_value}")
 
-except ImportError:
+except ImportError as e:
     print(
-        "      ❌ Hopsworks not installed in this environment."
-    )
-    print(
-        "      Make sure you are using .hops_env."
+        f"      ❌ Hopsworks import failed: {e}"
     )
     sys.exit(1)
 
