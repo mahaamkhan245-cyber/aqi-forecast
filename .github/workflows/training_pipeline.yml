@@ -1,15 +1,15 @@
-name: Training Pipeline — Daily (Hopsworks)
+name: Feature Pipeline — Hourly (Hopsworks)
 
 on:
   schedule:
-    - cron: "0 1 * * *"   # 1 AM UTC daily
+    - cron: "0 * * * *"   # every hour
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  training-pipeline:
+  feature-pipeline:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,29 +24,62 @@ jobs:
           python-version: "3.11"
           cache: pip
 
+      # ── FIX: detect where scripts actually are ───────────────────────
+      - name: Detect project root
+        id: find_root
+        run: |
+          if [ -f "hopsworks_feature_pipeline.py" ]; then
+            echo "PROJECT_DIR=." >> $GITHUB_ENV
+            echo "Found scripts at repo root"
+          elif [ -f "pearl/hopsworks_feature_pipeline.py" ]; then
+            echo "PROJECT_DIR=pearl" >> $GITHUB_ENV
+            echo "Found scripts in pearl/ subfolder"
+          else
+            echo "Searching …"
+            FOUND=$(find . -name "hopsworks_feature_pipeline.py" | head -1)
+            if [ -n "$FOUND" ]; then
+              DIR=$(dirname "$FOUND")
+              echo "PROJECT_DIR=$DIR" >> $GITHUB_ENV
+              echo "Found at: $FOUND"
+            else
+              echo "ERROR: hopsworks_feature_pipeline.py not found"
+              find . -name "*.py" | head -20
+              exit 1
+            fi
+          fi
+
       - name: Install dependencies
         run: |
+          cd $PROJECT_DIR
           if [ -f requirements.txt ]; then
             pip install -r requirements.txt
           else
-            pip install pandas scikit-learn joblib python-dotenv hopsworks tensorflow
+            pip install pandas requests scikit-learn joblib python-dotenv hopsworks
           fi
 
-      - name: Run Hopsworks Training Pipeline
-        run: python hopsworks_training_pipeline.py
+      - name: Run Hopsworks Feature Pipeline
+        run: |
+          cd $PROJECT_DIR
+          python hopsworks_feature_pipeline.py
         env:
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+          AQICN_API_KEY: ${{ secrets.AQICN_API_KEY }}
           HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
           HOPSWORKS_PROJECT_NAME: ${{ secrets.HOPSWORKS_PROJECT_NAME }}
 
-      - name: Regenerate SHAP explanations
-        continue-on-error: true
-        run: python shap_explain.py
-
-      - name: Commit updated models and registry
+      - name: Run forecast prediction
         run: |
+          cd $PROJECT_DIR
+          python forecast_prediction.py
+        env:
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+
+      - name: Commit updated forecast CSVs
+        run: |
+          cd $PROJECT_DIR
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/models/ data/registry/ data/eda/ data/processed/ || true
-          git diff --cached --quiet && echo "No changes" || \
-            git commit -m "auto: daily retrain $(date -u '+%Y-%m-%d')"
+          git add data/processed/ || true
+          git diff --cached --quiet && echo "No changes to commit" || \
+            git commit -m "auto: hourly feature push + forecast $(date -u '+%Y-%m-%d %H:%M UTC')"
           git push
