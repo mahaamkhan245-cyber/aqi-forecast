@@ -309,8 +309,9 @@ try:
 
     history["date"] = pd.to_datetime(
         history["date"],
-        format="mixed"
-    )
+        utc=True,        # handles both tz-aware and tz-naive strings
+        errors="coerce"  # bad rows become NaT instead of crashing
+    ).dt.tz_localize(None)  # strip timezone so comparisons work cleanly
 
     history = history.sort_values(
         "date"
