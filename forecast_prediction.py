@@ -1,24 +1,3 @@
-"""
-forecast_prediction.py
-
-Runs recursive AQI forecast using the Production model from the registry.
-
-Supports:
-    1. Random Forest
-    2. Ridge Regression
-    3. PyTorch Bidirectional LSTM
-
-The production model is selected from:
-    data/registry/model_registry.csv
-
-The script fails loudly if:
-    - No Production model exists
-    - Model files are missing
-    - Forecast CSVs cannot be loaded
-    - Weather/AQI merge is empty
-    - Prediction fails
-"""
-
 import sys
 import os
 import pandas as pd
@@ -329,7 +308,8 @@ try:
     )
 
     history["date"] = pd.to_datetime(
-        history["date"]
+        history["date"],
+        format="mixed"
     )
 
     history = history.sort_values(
