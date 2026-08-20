@@ -4,7 +4,7 @@ pandas>=2.2.2
 scikit-learn>=1.6.0
 joblib>=1.4.2
 
-# ── Deep learning (PyTorch — works on Python 3.11) ────────────
+# ── Deep learning (PyTorch) ───────────────────────────────────
 torch>=2.3.0
 
 # ── Dashboard & API ───────────────────────────────────────────
@@ -21,4 +21,5 @@ shap>=0.46.0
 matplotlib>=3.9.0
 
 # ── MLOps / Feature Store ─────────────────────────────────────
-hopsworks>=3.7.0
+hopsworks[python]>=3.7.0
+confluent-kafka>=2.3.0
