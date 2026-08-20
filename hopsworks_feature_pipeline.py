@@ -165,6 +165,29 @@ try:
     )
     fs = project.get_feature_store()
     fg = fs.get_feature_group(name="aqi_features", version=1)
+    # FIX: cast columns to match Hopsworks Feature Group schema
+    # bigint columns must be int, not float
+    int_cols = [
+        "row_id", "year", "month", "day",
+        "day_of_week", "day_of_year", "weekend", "rain_flag",
+        "humidity",   # stored as bigint in Hopsworks
+    ]
+    for col in int_cols:
+        if col in new_df.columns:
+            new_df[col] = new_df[col].astype(int)
+
+    # All other numeric cols stay as float64 (double in Hopsworks)
+    float_cols = [
+        "temperature", "pressure", "wind_speed", "rain",
+        "pm10", "pm2_5", "carbon_monoxide", "nitrogen_dioxide",
+        "sulphur_dioxide", "ozone", "AQI",
+        "AQI_lag_1", "AQI_lag_2", "AQI_lag_3",
+        "AQI_3day_mean", "AQI_7day_mean", "temp_humidity",
+    ]
+    for col in float_cols:
+        if col in new_df.columns:
+            new_df[col] = new_df[col].astype(float)
+
     fg.insert(new_df, write_options={"wait_for_job": True})
 
     print(f"      ✅ Row pushed to Hopsworks Feature Store")
