@@ -4,8 +4,9 @@ pandas>=2.2.2
 scikit-learn>=1.6.0
 joblib>=1.4.2
 
-# ── Deep learning (PyTorch) ───────────────────────────────────
-torch>=2.3.0
+# ── Deep learning — CPU only (no CUDA, avoids huge GPU downloads) ─
+# torch is installed separately in the workflow via --index-url
+# so do NOT put torch here — it is handled by the workflow yml
 
 # ── Dashboard & API ───────────────────────────────────────────
 streamlit>=1.35.0
