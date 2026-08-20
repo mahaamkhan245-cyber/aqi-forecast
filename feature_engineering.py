@@ -3,8 +3,21 @@ import pandas as pd
 # Load merged dataset
 df = pd.read_csv("data/processed/historical_karachi_dataset.csv")
 
-# Convert date column
-df["date"] = pd.to_datetime(df["date"])
+# Convert date column safely
+df["date"] = pd.to_datetime(
+    df["date"],
+    format="mixed",
+    errors="coerce",
+    utc=True
+)
+
+# Check for invalid dates
+if df["date"].isna().any():
+    print("⚠️ Invalid dates found:")
+    print(df[df["date"].isna()])
+
+    # Remove invalid date rows
+    df = df.dropna(subset=["date"]).reset_index(drop=True)
 
 # -------------------------
 # Time Features
@@ -46,6 +59,7 @@ df = df.dropna().reset_index(drop=True)
 
 print(df.head())
 print("\nShape:", df.shape)
+print("\nDate dtype:", df["date"].dtype)
 
 # Save engineered dataset
 df.to_csv(
