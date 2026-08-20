@@ -1,0 +1,69 @@
+name: Training Pipeline — Daily Model Retrain
+
+on:
+  schedule:
+    - cron: "0 0 * * *"   # midnight UTC every day
+  workflow_dispatch:
+
+jobs:
+  retrain-model:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pearl
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch latest historical weather
+        run: python historic_weather.py
+        env:
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+
+      - name: Process historical air quality
+        run: python historic_air_quality.py
+
+      - name: Merge datasets
+        run: python merge_dataset.py
+
+      - name: Engineer features
+        run: python feature_engineering.py
+
+      - name: Retrain model and update registry
+        run: python train_model.py
+
+      - name: Regenerate EDA plots
+        run: python eda.py
+
+      - name: Regenerate feature importance plot
+        run: python feature_importance.py
+
+      - name: Regenerate SHAP explanations
+        run: python shap_explain.py
+
+      - name: Refresh live forecast with new model
+        run: python refresh_data.py
+        env:
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+          AQICN_API_KEY: ${{ secrets.AQICN_API_KEY }}
+
+      - name: Commit retrained model and updated files
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/models/ \
+                  data/registry/ \
+                  data/processed/ \
+                  data/eda/
+          git diff --cached --quiet || git commit -m "auto: daily retrain $(date -u '+%Y-%m-%d')"
+          git push
