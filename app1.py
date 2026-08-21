@@ -21,6 +21,7 @@ from utils.aqi import get_aqi_category
 from dotenv import load_dotenv
 import textwrap
 import json
+from api_client import health, get_forecast, get_features
 
 warnings.filterwarnings("ignore")
 load_dotenv()
@@ -302,47 +303,128 @@ def generate_forecast_from_model(model_obj, df_hist, n_days=4):
     """Generate AQI forecast using the trained model + latest historical lags.
     Works even when APIs are unavailable / forecast CSV is stale."""
     latest = df_hist.sort_values("date").iloc[-1]
-    lag1 = latest["AQI"]; lag2 = latest["AQI_lag_1"]; lag3 = latest["AQI_lag_2"]
+    lag1 = latest["AQI"]
+    lag2 = latest["AQI_lag_1"]
+    lag3 = latest["AQI_lag_2"]
     mean7 = latest["AQI_7day_mean"]
+
     today = datetime.now()
     rows = []
+
     for i in range(n_days):
         d = today + timedelta(days=i)
+
         row = latest.copy()
-        row["year"] = d.year;  row["month"] = d.month
-        row["day"] = d.day;   row["day_of_week"] = d.weekday()
+        row["year"] = d.year
+        row["month"] = d.month
+        row["day"] = d.day
+        row["day_of_week"] = d.weekday()
         row["day_of_year"] = d.timetuple().tm_yday
         row["weekend"] = 1 if d.weekday() >= 5 else 0
-        row["AQI_lag_1"] = lag1; row["AQI_lag_2"] = lag2; row["AQI_lag_3"] = lag3
-        row["AQI_3day_mean"] = (lag1+lag2+lag3)/3
+
+        row["AQI_lag_1"] = lag1
+        row["AQI_lag_2"] = lag2
+        row["AQI_lag_3"] = lag3
+        row["AQI_3day_mean"] = (lag1 + lag2 + lag3) / 3
         row["AQI_7day_mean"] = mean7
+
         X = pd.DataFrame([row[FCOLS]])
         pred = float(predict_m(model_obj, X)[0])
+
         cat, _ = get_aqi_category(pred)
-        rows.append({"date": pd.Timestamp(d.date()), "Predicted_AQI": round(pred, 2),
-                     "Category": cat, "source": "model"})
-        lag3 = lag2; lag2 = lag1; lag1 = pred
+
+        rows.append({
+            "date": pd.Timestamp(d.date()),
+            "Predicted_AQI": round(pred, 2),
+            "Category": cat,
+            "source": "model"
+        })
+
+        lag3 = lag2
+        lag2 = lag1
+        lag1 = pred
+
     return pd.DataFrame(rows)
 
 
 def load_forecast_robust():
     """Load forecast CSV; fall back to model-generated forecast if stale."""
     today = pd.Timestamp.now().normalize()
+
     try:
         fc = pd.read_csv("data/processed/aqi_forecast.csv")
         fc["date"] = pd.to_datetime(fc["date"])
+
         future = fc[fc["date"] >= today].reset_index(drop=True)
+
         if len(future) >= 3:
             future["source"] = "csv"
-            return future, False   # (df, is_generated)
+            return future, False
+
     except Exception:
         pass
-    # Fall back to model-generated
+
+    # Fall back to model-generated forecast
     gen = generate_forecast_from_model(model, df)
+
     return gen, True
 
 
-forecast_df, fc_is_generated = load_forecast_robust()
+def load_forecast_from_render():
+    """
+    Load the production AQI forecast from the Render API.
+
+    Converts the API response into the dataframe format
+    expected by the existing dashboard.
+    """
+    try:
+        data = get_forecast()
+
+        forecast = data.get("forecast", [])
+
+        if not forecast:
+            raise ValueError("Render API returned an empty forecast.")
+
+        df_render = pd.DataFrame(forecast)
+
+        # Match the existing dashboard column names
+        df_render = df_render.rename(columns={
+            "predicted_aqi": "Predicted_AQI"
+        })
+
+        # Ensure correct data types
+        df_render["date"] = pd.to_datetime(df_render["date"])
+
+        df_render["Predicted_AQI"] = pd.to_numeric(
+            df_render["Predicted_AQI"],
+            errors="coerce"
+        )
+
+        # Remove invalid predictions
+        df_render = df_render.dropna(
+            subset=["Predicted_AQI"]
+        )
+
+        if df_render.empty:
+            raise ValueError("Render API returned no valid AQI predictions.")
+
+        # Mark the production source
+        df_render["source"] = "render_api"
+
+        return df_render, False
+
+    except Exception as e:
+        st.warning(
+            f"⚠️ Could not load forecast from Render API: {e}"
+        )
+
+        # Existing local fallback
+        return load_forecast_robust()
+
+
+# Render API is now the primary forecast source
+forecast_df, fc_is_generated = load_forecast_from_render()
+       
 
 
 # ── Live pollutant data ──────────────────────────────────────────────────
