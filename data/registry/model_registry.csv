@@ -1,4 +1,4 @@
 version,algorithm,model_file,r2,mae,rmse,train_date,status
-1,Random Forest,rf_model.pkl,0.0927,5.6297,41.3988,2026-09-14 05:55,Challenger
-2,Ridge Regression,ridge_model.pkl,0.1105,7.5832,40.9905,2026-09-14 05:55,Production
-3,PyTorch LSTM,pytorch_lstm.pt,0.0064,7.6087,43.3223,2026-09-14 05:55,Challenger
+1,Random Forest,rf_model.pkl,0.1001,5.6009,41.2614,2026-09-15 05:55,Challenger
+2,Ridge Regression,ridge_model.pkl,0.1176,7.599,40.8592,2026-09-15 05:55,Production
+3,PyTorch LSTM,pytorch_lstm.pt,-0.011,9.3578,43.7359,2026-09-15 05:55,Challenger
